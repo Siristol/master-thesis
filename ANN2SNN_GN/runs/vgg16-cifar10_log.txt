@@ -1,1 +1,5 @@
 lr=0.1,epochs=1,wd=0.0005
+lr=0.1,epochs=1,wd=0.0005
+lr=0.1,epochs=1,wd=0.0005
+lr=0.1,epochs=1,wd=0.0005
+Epoch:0,Train_loss:0.014263642506599426,Val_loss:0.01330806713104248,Acc:0.22109998762607574,lr:0.1
