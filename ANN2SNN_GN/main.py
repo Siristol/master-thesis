@@ -46,10 +46,10 @@ if __name__ == "__main__":
             model = replace_qcfs_with_sn(model,members=args.tau,sn_type=args.sn_type)
             model.to(args.device)
             acc = eval_snn(test, model,criterion, args.device, args.t)
-            print('Accuracy: ', acc)
+            print('Accuracy SNN: ', acc)
         elif args.mode == 'ann':
             model.to(args.device)
             acc, _ = eval_ann(test, model, criterion, args.device)
-            print('Accuracy: {:.4f}'.format(acc))
+            print('Accuracy ANN: ', acc)
         else:
             AssertionError('Unrecognized mode')
