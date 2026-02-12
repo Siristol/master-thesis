@@ -9,7 +9,7 @@ from spikingjelly.activation_based import functional
 from torch.utils.tensorboard import SummaryWriter   
 
 def seed_all(seed=42):
-    print(seed)
+    #print(seed)
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
