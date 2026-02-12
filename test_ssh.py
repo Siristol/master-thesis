@@ -1,6 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+# Remove TensorFlow logging messages
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+# Force TensorFlow to use CPU only
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import tensorflow as tf
+
 
 filename = "test_ssh"
 

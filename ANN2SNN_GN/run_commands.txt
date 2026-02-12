@@ -8,7 +8,3 @@ Test SNN
 python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg16   --data=cifar10   --mode=snn   --id=vgg16-cifar10_e120   --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
 
 
-
-
-
-python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg16   --data=cifar100   --mode=snn   --id=vgg16-cifar100_e120  --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42

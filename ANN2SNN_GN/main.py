@@ -1,3 +1,7 @@
+import os
+# Suppress TensorFlow info messages
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+
 import argparse
 import torch.multiprocessing as mp
 from Models import modelpool
