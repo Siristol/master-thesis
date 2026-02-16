@@ -12,6 +12,8 @@ def modelpool(MODELNAME, DATANAME):
         return vgg16(num_classes=num_classes)
     if MODELNAME.lower() == 'vgg19':
         return vgg19(num_classes=num_classes)
+    if MODELNAME.lower() == 'vgg13':
+        return vgg13(num_classes=num_classes)
     elif MODELNAME.lower() == 'resnet18':
         return resnet18(num_classes=num_classes)
     elif MODELNAME.lower() == 'resnet34':
@@ -19,5 +21,5 @@ def modelpool(MODELNAME, DATANAME):
     elif MODELNAME.lower() == 'resnet20':
         return resnet20(num_classes=num_classes)
     else:
-        print("Error:only support vgg16,vgg19,resnet18,resnet20,resnet34,")
+        print("Error:only support vgg16, vgg19, vgg13, resnet18, resnet20, resnet34")
         exit(0)
