@@ -1,10 +1,10 @@
 #Train
-python main.py train   --gpus=2   --bs=160   --lr=0.1   --epochs=120   --l=8   --model=vgg13   --data=cifar10   --id=vgg13-cifar10_e120
+python main.py train   --gpus=2   --bs=160   --lr=0.1   --epochs=120   --l=8   --model=mobilenet   --data=cifar10   --id=mobilenet-cifar10_e120
 
 Test ANN
-python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg13   --data=cifar10   --mode=ann   --id=vgg13-cifar10_e120  --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=128   --l=8   --model=mobilenet   --data=cifar10   --mode=ann   --id=mobilenet-cifar10_e120  --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
 
 Test SNN
-python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg13   --data=cifar10   --mode=snn   --id=vgg13-cifar10_e120   --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=128   --l=8   --model=mobilenet   --data=cifar10   --mode=snn   --id=mobilenet-cifar10_e120   --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
 
 
