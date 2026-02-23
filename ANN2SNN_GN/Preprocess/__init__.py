@@ -7,6 +7,8 @@ def datapool(DATANAME, batchsize):
         return GetCifar100(batchsize)
     elif DATANAME.lower() == 'imagenet':
         return GetImageNet(batchsize)
+    elif DATANAME.lower() == 'coco':
+        return GetVwCoco(batchsize)
     else:
-        print("Error:only support cifar10,cifar100,imagenet")
+        print("Error: only support cifar10, cifar100, imagenet, coco")
         exit(0)

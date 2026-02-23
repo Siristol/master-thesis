@@ -6,7 +6,7 @@ import os
 from Preprocess.augment import Cutout, CIFAR10Policy
 
 # your own data dir
-DIR = {'CIFAR10': 'your_path', 'CIFAR100': 'your_path', 'ImageNet': 'your_path'}
+DIR = {'CIFAR10': 'your_path', 'CIFAR100': 'your_path', 'ImageNet': 'your_path', 'VW_COCO': 'vw_coco2014_96'}
 
 
 
@@ -67,3 +67,43 @@ def GetImageNet(batchsize):
     test_sampler = torch.utils.data.distributed.DistributedSampler(test_data)
     test_dataloader = DataLoader(test_data, batch_size=batchsize, shuffle=False, num_workers=8, sampler=test_sampler) 
     return  train_dataloader,test_dataloader
+
+def GetVwCoco(batchsize):
+    # VW COCO 2014 96x96 dataset with person/non_person binary classification
+    # Following TensorFlow approach: simple rescaling (0-255 -> 0-1) without standardization
+    trans_t = transforms.Compose([transforms.Resize((96, 96)),
+                                  transforms.RandomRotation(10),
+                                  transforms.RandomAffine(degrees=0, translate=(0.05, 0.05)),
+                                  transforms.RandomAffine(degrees=0, scale=(0.9, 1.1)),  # zoom ±10%
+                                  transforms.RandomHorizontalFlip(),
+                                  transforms.ToTensor(),  # Converts 0-255 to 0-1 (like rescale=1./255)
+                                  ])
+    
+    trans = transforms.Compose([transforms.Resize((96, 96)),
+                                transforms.ToTensor()  # Simple rescaling only for test
+                                ])
+
+    # Load the full dataset with minimal transforms first
+    temp_transform = transforms.Compose([transforms.Resize((96, 96)), transforms.ToTensor()])
+    full_data = datasets.ImageFolder(root=DIR['VW_COCO'], transform=temp_transform)
+    
+    # Split dataset into train and test (90% train, 10% test)
+    dataset_size = len(full_data)
+    train_size = int(0.9 * dataset_size)
+    test_size = dataset_size - train_size
+    
+    generator = torch.Generator().manual_seed(42)  # For reproducible splits
+    train_indices, test_indices = torch.utils.data.random_split(range(dataset_size), [train_size, test_size], generator=generator)
+    
+    # Create train dataset with augmentation transforms
+    train_data = datasets.ImageFolder(root=DIR['VW_COCO'], transform=trans_t)
+    train_dataset = torch.utils.data.Subset(train_data, train_indices.indices)
+    
+    # Create test dataset with basic transforms only  
+    test_data = datasets.ImageFolder(root=DIR['VW_COCO'], transform=trans)
+    test_dataset = torch.utils.data.Subset(test_data, test_indices.indices)
+    
+    train_dataloader = DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=8, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=batchsize, shuffle=False, num_workers=4, pin_memory=True)
+    
+    return train_dataloader, test_dataloader
