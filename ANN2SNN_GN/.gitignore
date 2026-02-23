@@ -1,6 +1,7 @@
 #Siri add
 your_path
 saved_models
+vw_coco2014_96
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
