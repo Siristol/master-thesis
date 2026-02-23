@@ -86,5 +86,5 @@ def plot_training_curves(log_file_path, save_plots=False, output_dir="./plots"):
 # Example usage
 if __name__ == "__main__":
     # Plot curves for a single model
-    plot_training_curves("runs/vgg19-cifar10_e120_log.txt", save_plots=True)
+    plot_training_curves("runs/mobilenetv1-coco_log.txt", save_plots=True)
     pass
