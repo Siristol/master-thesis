@@ -5,8 +5,8 @@ import warnings
 import torch.nn as nn
 import torch.nn.parallel
 import torch.optim
-from models import modelpool
-from preprocess import datapool
+from Models import modelpool
+from Preprocess import datapool
 from utils import train, val, seed_all, get_logger
 
 parser = argparse.ArgumentParser(description='PyTorch Training')
