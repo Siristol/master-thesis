@@ -54,7 +54,8 @@ def replace_maxpool2d_with_avgpool2d(model: nn.Module):
     for name in input_monitor.monitored_layers:
         parent, child = get_module_by_name(model, name)
         assert not (parent is None and child is None)
-        new_child = torch.nn.AvgPool2d(child.kernel_size, child.stride, child.padding, child.ceil_mode)
+        #new_child = torch.nn.AvgPool2d(child.kernel_size, child.stride, child.padding, child.ceil_mode)
+        new_child = torch.nn.AdaptiveAvgPool2d((1,1)) #Change to adaptive pooling to fit various input sizes
         setattr(parent, name.split('.')[-1], new_child)
     input_monitor.clear_recorded_data()
     input_monitor.remove_hooks()
