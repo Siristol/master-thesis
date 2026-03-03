@@ -206,5 +206,5 @@ def vgg16(num_classes, dropout=0.):
 def vgg16_wobn(num_classes, dropout=0.1):
     return VGG_woBN('VGG16', num_classes, dropout)
 
-def vgg19(num_classes, dropout):
+def vgg19(num_classes, dropout=0.1):
     return VGG('VGG19', num_classes, dropout)
