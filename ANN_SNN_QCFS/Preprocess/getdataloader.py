@@ -3,7 +3,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch
 import os
-from preprocess.augment import Cutout, CIFAR10Policy
+from Preprocess.augment import Cutout, CIFAR10Policy
 
 # your own data dir
 DIR = {'CIFAR10': '~/datasets', 'CIFAR100': '~/datasets', 'ImageNet': 'YOUR_IMAGENET_DIR'}
