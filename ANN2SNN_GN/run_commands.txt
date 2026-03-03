@@ -1,10 +1,10 @@
 #Train
-python main.py train   --gpus=2   --bs=50   --lr=0.03   --epochs=20   --l=8  --wd=0.0005 --model=mobilenetv1  --data=coco   --id=mobilenetv1-coco
+python main.py train   --gpus=2   --bs=160   --lr=0.1   --epochs=120   --l=8  --wd=0.0005 --model=resnet20  --data=coco   --id=resnet20-coco
 
 Test ANN
-python main.py test   --gpus=2   --bs=100   --l=8   --model=mobilenetv1   --data=coco   --mode=ann   --id=mobilenetv1-coco --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=120   --l=8   --model=resnet20   --data=coco   --mode=ann   --id=resnet20-coco --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
 
 Test SNN
-python main.py test   --gpus=2   --bs=100   --l=8   --model=mobilenetv1   --data=coco   --mode=snn   --id=mobilenetv1-coco   --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=120   --l=8   --model=resnet20   --data=coco   --mode=snn   --id=resnet20-coco   --sn_type=gn   --tau=6   --t=32   --device=cuda   --seed=42
 
 

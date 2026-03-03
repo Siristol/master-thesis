@@ -1,0 +1,3 @@
+lr=0.1,epochs=120,wd=0.0005
+Epoch:0,Train_loss:nan,Val_loss:nan,Acc:0.5236271023750305,lr:0.1
+Epoch:1,Train_loss:nan,Val_loss:nan,Acc:0.5236271023750305,lr:0.09998286642011538
