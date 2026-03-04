@@ -32,7 +32,6 @@ class MobileNet(nn.Module):
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
         self.layers = self._make_layers(in_planes=32)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))  # Adaptive pooling for any input size
         self.linear = nn.Linear(1024, num_classes)
 
     def _make_layers(self, in_planes):
@@ -47,7 +46,7 @@ class MobileNet(nn.Module):
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.layers(out)
-        out = self.avgpool(out)  # Use adaptive pooling
+        out = F.avg_pool2d(out, 2)
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return out
