@@ -1,7 +1,6 @@
 from .ResNet import *
 from .VGG import *
 from .MobileNetV1 import *
-from .CustomMobileNet import *
 
 def modelpool(MODELNAME, DATANAME):
     if 'imagenet' in DATANAME.lower():
