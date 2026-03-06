@@ -23,7 +23,7 @@ def modelpool(MODELNAME, DATANAME):
         return resnet34(num_classes=num_classes)
     elif MODELNAME.lower() == 'resnet20':
         return resnet20(num_classes=num_classes)
-    elif MODELNAME.lower() == 'mobilenetv1':
+    elif MODELNAME.lower() == 'mobilenet':
         return MobileNetV1(num_classes=num_classes)
     else:
         print("Error:only support vgg16, vgg19, vgg13, resnet18, resnet20, resnet34, mobilenet, mobilenetv1")
