@@ -27,10 +27,10 @@ class MobileNetV1(nn.Module):
     def __init__(self, num_classes=2):
         super().__init__()
 
-        num_filters = 8  # alpha = 0.25 version
+        num_filters = 16  # alpha = 0.25 version for coco, alpha = 0.5 for cifar10/100
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, num_filters, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.Conv2d(3, num_filters, kernel_size=3, stride=1, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
             nn.BatchNorm2d(num_filters),
             nn.ReLU(inplace=True)
         )
@@ -92,7 +92,7 @@ class MobileNetV1(nn.Module):
 
         x = self.fc(x)
 
-        return F.softmax(x, dim=1)
+        return x
 
 def MobileNet(num_classes=10, **kwargs):
     return MobileNetV1(num_classes=num_classes)
