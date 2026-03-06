@@ -1,55 +1,98 @@
-'''MobileNet in PyTorch.
-
-See the paper "MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications"
-for more details.
+'''
+MobileNetV1 implementation in pytorch. Architecture is based on the Tensorflow implementation used in MLPerf Tiny: https://github.com/mlcommons/tiny/blob/master/benchmark/training/visual_wake_words/vww_model.py
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Block(nn.Module):
-    '''Depthwise conv + Pointwise conv'''
-    def __init__(self, in_planes, out_planes, stride=1):
-        super(Block, self).__init__()
-        self.conv1 = nn.Conv2d(in_planes, in_planes, kernel_size=3, stride=stride, padding=1, groups=in_planes, bias=False)
-        self.bn1 = nn.BatchNorm2d(in_planes)
-        self.conv2 = nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_planes)
+class DepthwiseSeparableConv(nn.Module):
+    def __init__(self, in_channels, out_channels, stride):
+        super().__init__()
+
+        self.depthwise = nn.Conv2d(in_channels,in_channels,kernel_size=3,stride=stride,padding=1,groups=in_channels,bias=False)
+        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.pointwise = nn.Conv2d(in_channels,out_channels,kernel_size=1,stride=1,padding=0,bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = F.relu(self.bn2(self.conv2(out)))
-        return out
+        x = self.relu(self.bn1(self.depthwise(x)))
+        x = self.relu(self.bn2(self.pointwise(x)))
+        return x
 
 
-class MobileNet(nn.Module):
-    # (128,2) means conv planes=128, conv stride=2, by default conv stride=1
-    cfg = [64, (128,2), 128, (256,2), 256, (512,2), 512, 512, 512, 512, 512, (1024,2), 1024]
+class MobileNetV1(nn.Module):
 
-    def __init__(self, num_classes=10):
-        super(MobileNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.layers = self._make_layers(in_planes=32)
-        self.linear = nn.Linear(1024, num_classes)
+    def __init__(self, num_classes=2):
+        super().__init__()
 
-    def _make_layers(self, in_planes):
-        layers = []
-        for x in self.cfg:
-            out_planes = x if isinstance(x, int) else x[0]
-            stride = 1 if isinstance(x, int) else x[1]
-            layers.append(Block(in_planes, out_planes, stride))
-            in_planes = out_planes
-        return nn.Sequential(*layers)
+        num_filters = 8  # alpha = 0.25 version
+
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, num_filters, kernel_size=3, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(num_filters),
+            nn.ReLU(inplace=True)
+        )
+        self.ds2 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=1)
+        num_filters *= 2
+
+        self.ds3 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=2)
+        num_filters *= 2
+
+        self.ds4 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+
+        self.ds5 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=2)
+        num_filters *= 2
+
+        self.ds6 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+
+        self.ds7 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=2)
+        num_filters *= 2
+
+        # layers 8-12
+        self.ds8 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+        self.ds9 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+        self.ds10 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+        self.ds11 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+        self.ds12 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+
+        self.ds13 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=2)
+        num_filters *= 2
+
+        self.ds14 = DepthwiseSeparableConv(num_filters, num_filters, stride=1)
+
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
+        self.fc = nn.Linear(num_filters, num_classes)
 
     def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.layers(out)
-        out = F.avg_pool2d(out, 2)
-        out = out.view(out.size(0), -1)
-        out = self.linear(out)
-        return out
+
+        x = self.conv1(x)
+
+        x = self.ds2(x)
+        x = self.ds3(x)
+        x = self.ds4(x)
+        x = self.ds5(x)
+        x = self.ds6(x)
+        x = self.ds7(x)
+
+        x = self.ds8(x)
+        x = self.ds9(x)
+        x = self.ds10(x)
+        x = self.ds11(x)
+        x = self.ds12(x)
+
+        x = self.ds13(x)
+        x = self.ds14(x)
+
+        x = self.avgpool(x)
+
+        x = torch.flatten(x, 1)
+
+        x = self.fc(x)
+
+        return F.softmax(x, dim=1)
 
 def MobileNetV1(num_classes=10, **kwargs):
-    return MobileNet(num_classes=num_classes)
+    return MobileNetV1(num_classes=num_classes)
