@@ -94,5 +94,5 @@ class MobileNetV1(nn.Module):
 
         return F.softmax(x, dim=1)
 
-def MobileNetV1(num_classes=10, **kwargs):
+def MobileNet(num_classes=10, **kwargs):
     return MobileNetV1(num_classes=num_classes)
