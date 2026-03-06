@@ -360,3 +360,15 @@
 [2026-03-03 16:58:14,328][main_train.py][line:72][INFO] Epoch:[119/120]	 Test acc=91.540
 
 [2026-03-03 16:58:14,328][main_train.py][line:78][INFO] Best Test acc=91.680
+
+
+ANN accuracy:
+
+SNN accuracy: 
+-T=1 
+-T=2 
+-T=4 
+-T=8 
+-T=16 
+-T=32 
+-T=64 
