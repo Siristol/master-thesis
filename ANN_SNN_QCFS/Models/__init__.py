@@ -1,6 +1,7 @@
 from .ResNet import *
 from .VGG import *
 from .layer import *
+from MobileNetV1 import *
 
 def modelpool(MODELNAME, DATANAME):
     if 'imagenet' in DATANAME.lower():
@@ -21,6 +22,8 @@ def modelpool(MODELNAME, DATANAME):
         return resnet34(num_classes=num_classes)
     elif MODELNAME.lower() == 'resnet20':
         return resnet20(num_classes=num_classes)
+    elif MODELNAME.lower() == 'mobilenet':
+        return MobileNet(num_classes=num_classes)
     else:
         print("still not support this model")
         exit(0)
