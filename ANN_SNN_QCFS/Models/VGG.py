@@ -112,6 +112,8 @@ class VGG(nn.Module):
         out = self.layer3(out)
         out = self.layer4(out)
         out = self.layer5(out)
+        # Globlal average pooling befor flattening to fix the feature map size for various input sizes for the coco dataset. For cifar10/100: ignore. 
+        out = nn.functional.adaptive_avg_pool2d(out, (1,1)) #Adaptive pooling added for the coco dataset 
         out = self.classifier(out)
         if self.T > 0:
             out = self.expand(out)
@@ -195,6 +197,8 @@ class VGG_woBN(nn.Module):
         out = self.layer3(out)
         out = self.layer4(out)
         out = self.layer5(out)
+        # Globlal average pooling befor flattening to fix the feature map size for various input sizes for the coco dataset. For cifar10/100: ignore. 
+        out = nn.functional.adaptive_avg_pool2d(out, (1,1)) #Adaptive pooling added for the coco dataset 
         out = self.classifier(out)
         if self.T > 0:
             out = self.expand(out)
