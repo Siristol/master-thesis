@@ -6,7 +6,7 @@ import os
 from Preprocess.augment import Cutout, CIFAR10Policy
 
 # your own data dir
-DIR = {'CIFAR10': '~/datasets', 'CIFAR100': '~/datasets', 'ImageNet': 'YOUR_IMAGENET_DIR'}
+DIR = {'CIFAR10': '~/datasets', 'CIFAR100': '~/datasets', 'ImageNet': 'YOUR_IMAGENET_DIR', 'VW_COCO': 'vw_coco2014_96'}
 
 def GetCifar10(batchsize, attack=False):
     trans_t = transforms.Compose([transforms.RandomCrop(32, padding=4),
