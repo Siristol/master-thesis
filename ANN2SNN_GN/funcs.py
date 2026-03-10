@@ -166,6 +166,7 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
     with torch.no_grad():
         for idx, (img, label) in enumerate(tqdm((test_dataloader))):
             spikes = 0
+            #total_spikes = 0
             length += len(label)
             img = img.cuda()
             label = label.cuda()
@@ -173,9 +174,12 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
                 out = model(img)
                 spikes += out
                 tot[t] += (label==spikes.max(1)[1]).sum()
+                #total_spikes += out.sum().item()
             spikes/=sim_len
             loss = loss_fn(spikes, label)
             functional.reset_net(model)
+            #avg_spikes = total_spikes/length
+            #print(f'Batch {idx}, Loss: {loss.item()/length:.4f}, Avg Spikes per Sample: {avg_spikes:.4f}')
     return (tot/length),loss.item()/length
 
 def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
