@@ -4,6 +4,7 @@ MobileNetV1 implementation in pytorch. Architecture is based on the Tensorflow i
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from Models.layer import *
 
 
 class DepthwiseSeparableConv(nn.Module):
@@ -15,8 +16,8 @@ class DepthwiseSeparableConv(nn.Module):
         self.pointwise = nn.Conv2d(in_channels,out_channels,kernel_size=1,stride=1,padding=0,bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
 
-        self.relu1 = nn.ReLU(inplace=True)
-        self.relu2 = nn.ReLU(inplace=True)
+        self.relu1 = IF()
+        self.relu2 = IF()
 
     def forward(self, x):
         x = self.relu1(self.bn1(self.depthwise(x)))   
@@ -25,15 +26,19 @@ class DepthwiseSeparableConv(nn.Module):
 
 class MobileNetV1(nn.Module):
 
-    def __init__(self, num_classes=2):
+    def __init__(self, num_classes=2, num_filters=32, strideFistConv=1):
         super().__init__()
 
-        num_filters = 8  # alpha = 0.25 (num_filters=8) version for coco. alpha = 1 (num_filters=32) for cifar10/100 because the network looses spatial information too fast
+        num_filters = num_filters  # alpha = 0.25 (num_filters=8) version for coco. alpha = 1 (num_filters=32) for cifar10/100 because the network looses spatial information too fast
+        
+        self.T = 0
+        self.merge = MergeTemporalDim(0)
+        self.expand = ExpandTemporalDim(0)
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, num_filters, kernel_size=3, stride=2, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
+            nn.Conv2d(3, num_filters, kernel_size=3, stride=strideFistConv, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
             nn.BatchNorm2d(num_filters),
-            nn.ReLU(inplace=True)
+            IF()
         )
         self.ds2 = DepthwiseSeparableConv(num_filters, num_filters * 2, stride=1)
         num_filters *= 2
@@ -68,6 +73,9 @@ class MobileNetV1(nn.Module):
         self.fc = nn.Linear(num_filters, num_classes)
 
     def forward(self, x):
+        if self.T > 0:
+            x = add_dimention(x, self.T)
+            x = self.merge(x)
 
         x = self.conv1(x)
 
@@ -93,7 +101,24 @@ class MobileNetV1(nn.Module):
 
         x = self.fc(x)
 
+        if self.T > 0:
+            x = self.expand(x)
+
         return x
 
+    def set_L(self, L):
+        for module in self.modules():
+            if isinstance(module, IF):
+                module.L = L
+        return
+
+    def set_T(self, T):
+        self.T = T
+        for module in self.modules():
+            if isinstance(module, (IF, ExpandTemporalDim)):
+                module.T = T
+        return
+
+
 def MobileNet(num_classes=10, **kwargs):
-    return MobileNetV1(num_classes=num_classes)
+    return MobileNetV1(num_classes=num_classes, num_filters=32, strideFistConv=1)
