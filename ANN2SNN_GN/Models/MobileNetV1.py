@@ -28,10 +28,10 @@ class MobileNetV1(nn.Module):
     def __init__(self, num_classes=2):
         super().__init__()
 
-        num_filters = 32  # alpha = 0.25 version for coco. alpha = 1 for cifar10/100 because the network looses spatial information too fast
+        num_filters = 8  # alpha = 0.25 (num_filters=8) version for coco. alpha = 1 (num_filters=32) for cifar10/100 because the network looses spatial information too fast
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, num_filters, kernel_size=3, stride=1, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
+            nn.Conv2d(3, num_filters, kernel_size=3, stride=2, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
             nn.BatchNorm2d(num_filters),
             nn.ReLU(inplace=True)
         )
