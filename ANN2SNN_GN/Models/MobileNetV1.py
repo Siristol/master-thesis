@@ -14,20 +14,21 @@ class DepthwiseSeparableConv(nn.Module):
         self.bn1 = nn.BatchNorm2d(in_channels)
         self.pointwise = nn.Conv2d(in_channels,out_channels,kernel_size=1,stride=1,padding=0,bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+
+        self.relu1 = nn.ReLU(inplace=True)
+        self.relu2 = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        x = self.relu(self.bn1(self.depthwise(x)))
-        x = self.relu(self.bn2(self.pointwise(x)))
+        x = self.relu1(self.bn1(self.depthwise(x)))   
+        x = self.relu2(self.bn2(self.pointwise(x)))     
         return x
-
 
 class MobileNetV1(nn.Module):
 
     def __init__(self, num_classes=2):
         super().__init__()
 
-        num_filters = 16  # alpha = 0.25 version for coco, alpha = 0.5 for cifar10/100
+        num_filters = 32  # alpha = 0.25 version for coco. alpha = 1 for cifar10/100 because the network looses spatial information too fast
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(3, num_filters, kernel_size=3, stride=1, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
