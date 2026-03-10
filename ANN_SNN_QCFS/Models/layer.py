@@ -75,6 +75,7 @@ class IF(nn.Module):
                 spike_pot.append(spike)
             x = torch.stack(spike_pot, dim=0)
             x = self.merge(x)
+            #print(f'IF layer: avg spikes per sample: {x.sum().item()/x.shape[0]:.4f}')
         else:
             x = x / self.thresh
             x = torch.clamp(x, 0, 1)
