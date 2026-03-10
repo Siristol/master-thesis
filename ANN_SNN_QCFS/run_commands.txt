@@ -1,9 +1,18 @@
 Train
-python main_train.py -b=160 --dataset=cifar10 --model=resnet20 -lr=0.1 --epochs=200 -L=8 -wd=0.0005
+python main_train.py -b=32 --dataset=coco --model=mobilenet -lr=0.001 --epochs=3 -L=8 -wd=0.0005
 
 Test ANN
-python main_test.py -b=128 --dataset=cifar10 --model=resnet20 -id=resnet20_L[8] -T=0
+python main_test.py -b=32 --dataset=coco --model=mobilenet -id=mobilenet_L[8] -T=0
 
 Test SNN
-python main_test.py -b=128 --dataset=cifar10 --model=resnet20 -id=resnet20_L[8] -T=32
+python main_test.py -b=32 --dataset=coco --model=mobilenet -id=mobilenet_L[8] -T=1
 
+ANN accuracy:
+
+SNN accuracy: 
+-T=1: 
+-T=2: 
+-T=4: 
+-T=8: 
+-T=16: 
+-T=32: 
