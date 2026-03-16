@@ -120,5 +120,5 @@ class MobileNetV1(nn.Module):
         return
 
 
-def MobileNet(num_classes=10, **kwargs):
-    return MobileNetV1(num_classes=num_classes, num_filters=32, strideFistConv=1)
+def MobileNet(num_classes=10, num_filters=32, strideFistConv=1):
+    return MobileNetV1(num_classes=num_classes, num_filters=num_filters, strideFistConv=strideFistConv)

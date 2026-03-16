@@ -25,13 +25,13 @@ class DepthwiseSeparableConv(nn.Module):
 
 class MobileNetV1(nn.Module):
 
-    def __init__(self, num_classes=2):
+    def __init__(self, num_classes=2, num_filters=32, strideFistConv=1):
         super().__init__()
 
-        num_filters = 8  # alpha = 0.25 (num_filters=8) version for coco. alpha = 1 (num_filters=32) for cifar10/100 because the network looses spatial information too fast
+        num_filters = num_filters  # alpha = 0.25 (num_filters=8) version for coco. alpha = 1 (num_filters=32) for cifar10/100 because the network looses spatial information too fast
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, num_filters, kernel_size=3, stride=2, padding=1, bias=False), #Stride 1 for cifar10/100, stride 2 for coco
+            nn.Conv2d(3, num_filters, kernel_size=3, stride=strideFistConv, padding=1, bias=False),
             nn.BatchNorm2d(num_filters),
             nn.ReLU(inplace=True)
         )
@@ -95,5 +95,5 @@ class MobileNetV1(nn.Module):
 
         return x
 
-def MobileNet(num_classes=10, **kwargs):
-    return MobileNetV1(num_classes=num_classes)
+def MobileNet(num_classes=10, num_filters=32, strideFistConv=1):
+    return MobileNetV1(num_classes=num_classes, num_filters=num_filters, strideFistConv=strideFistConv)
