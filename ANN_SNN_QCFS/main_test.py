@@ -10,6 +10,9 @@ from Preprocess import datapool
 from utils import train, val, seed_all, get_logger
 from Models.layer import *
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True" #In case of CUDA out of memory 
+
+
 parser = argparse.ArgumentParser(description='PyTorch Training')
 # just use default setting
 parser.add_argument('-j','--workers',default=4, type=int,metavar='N',help='number of data loading workers')
