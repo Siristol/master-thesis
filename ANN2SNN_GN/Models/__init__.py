@@ -7,10 +7,16 @@ def modelpool(MODELNAME, DATANAME):
         num_classes = 1000
     elif '100' in DATANAME.lower():
         num_classes = 100
+        num_filters = 32
+        strideFistConv = 1
     elif '10' in DATANAME.lower():
         num_classes = 10
+        num_filters = 32
+        strideFistConv = 1
     elif 'coco' in DATANAME.lower():
         num_classes = 2
+        num_filters = 8
+        strideFistConv = 2
     if MODELNAME.lower() == 'vgg16':
         return vgg16(num_classes=num_classes)
     if MODELNAME.lower() == 'vgg19':
@@ -24,7 +30,7 @@ def modelpool(MODELNAME, DATANAME):
     elif MODELNAME.lower() == 'resnet20':
         return resnet20(num_classes=num_classes)
     elif MODELNAME.lower() == 'mobilenet':
-        return MobileNet(num_classes=num_classes)
+        return MobileNet(num_classes=num_classes, num_filters=num_filters, strideFistConv=strideFistConv)
     else:
         print("Error:only support vgg16, vgg19, vgg13, resnet18, resnet20, resnet34, mobilenet, mobilenetv1")
         exit(0)
