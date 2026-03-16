@@ -7,6 +7,8 @@ import random
 import os
 from spikingjelly.activation_based import functional
 from torch.utils.tensorboard import SummaryWriter   
+from modules import CombinedNode, GN
+from collections import deque
 
 def seed_all(seed=42):
     #print(seed)
@@ -162,6 +164,7 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
     length = 0
     model = model.cuda()
     model.eval()
+    counter = SynOpsCounter(model)
 
     with torch.no_grad():
         for idx, (img, label) in enumerate(tqdm((test_dataloader))):
@@ -169,6 +172,7 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
             length += len(label)
             img = img.cuda()
             label = label.cuda()
+            counter.add_batch(len(label))
             for t in range(sim_len):
                 out = model(img)
                 spikes += out
@@ -176,6 +180,12 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
             spikes/=sim_len
             loss = loss_fn(spikes, label)
             functional.reset_net(model)
+        counter.compute_synops()
+        total_synops = counter.compute_synops()
+        print(f"Total spikes (all IF layers, all samples): {counter.total_spikes:.0f}")
+        energy = total_synops * 0.9e-12
+        print("Energy per sample (J):", energy)
+        counter.remove()
     return (tot/length),loss.item()/length
 
 def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
@@ -196,7 +206,7 @@ def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
     return (tot/length), epoch_loss/length
 
 
-lass SynOpsCounter:
+class SynOpsCounter:
     def __init__(self, model: nn.Module):
         self.model = model
         self.handles = []
@@ -214,7 +224,7 @@ lass SynOpsCounter:
 
         # hook IFs
         for m in model.modules():
-            if isinstance(m, IF):
+            if isinstance(m, (CombinedNode, GN)):
                 if_name = self._module_to_name.get(m, f"IF@{id(m)}")
                 self.layer_spikes[if_name] = 0.0
                 self.layer_fanout[if_name] = None
