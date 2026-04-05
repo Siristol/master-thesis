@@ -30,6 +30,8 @@ parser.add_argument('--model', type=str, default='pre_act_resnet34',help='Model 
 parser.add_argument('--sn_type', type=str, default='gn')
 parser.add_argument('--tau', type=int, default=4,help='members of one gn or pgn')
 parser.add_argument('--amp', type=bool,default=False, help='use amp on imagenet')
+parser.add_argument('--coding_type', type=str, default='rate', choices=['rate', 'ttfs'],
+                    help='Temporal coding scheme: rate (spike count) or ttfs (time-to-first-spike)')
 args = parser.parse_args()
 seed_all(args.seed)
 if __name__ == "__main__":
@@ -49,7 +51,10 @@ if __name__ == "__main__":
         if args.mode == 'snn':
             model = replace_qcfs_with_sn(model,members=args.tau,sn_type=args.sn_type)
             model.to(args.device)
-            acc = eval_snn(test, model,criterion, args.device, args.t)
+            if args.coding_type == 'ttfs':
+                acc = eval_snn_ttfs(test, model, criterion, args.device, args.t)
+            else:
+                acc = eval_snn(test, model,criterion, args.device, args.t)
             print('Accuracy SNN: ', acc)
         elif args.mode == 'ann':
             model.to(args.device)
