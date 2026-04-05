@@ -224,7 +224,7 @@ def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, rank=0):
     model.eval()
 
     with torch.no_grad():
-        for idx, (img, label) in enumerate(tqdm(test_dataloader)):
+        for _, (img, label) in enumerate(tqdm(test_dataloader)):
             length += len(label)
             img = img.to(device)
             label = label.to(device)

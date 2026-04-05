@@ -148,7 +148,7 @@ class GN_TTFS(base.MemoryModule):
         self.v_float_to_tensor(x)
 
         # Suppress charging for members that have already spiked
-        active = (self.has_spiked < 0.5).float()
+        active = (self.has_spiked == 0).float()
         self.v = self.v + x * active
 
         # Fire: apply threshold for each member neuron
