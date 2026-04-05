@@ -217,16 +217,17 @@ def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, rank=0):
         length sim_len containing the fraction of correctly classified
         samples at each timestep.
     """
-    tot = torch.zeros(sim_len).cuda()
+    tot = torch.zeros(sim_len, device=device)
     length = 0
-    model = model.cuda()
+    epoch_loss = 0.0
+    model = model.to(device)
     model.eval()
 
     with torch.no_grad():
         for idx, (img, label) in enumerate(tqdm(test_dataloader)):
             length += len(label)
-            img = img.cuda()
-            label = label.cuda()
+            img = img.to(device)
+            label = label.to(device)
 
             # first_spike_time[b, c] = timestep of first spike for sample b,
             # class c.  Initialised to sim_len (sentinel for "never spiked").
@@ -249,12 +250,14 @@ def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, rank=0):
                 decoded = decode_ttfs_output(first_spike_time, sim_len)
                 tot[t] += (label == decoded.max(1)[1]).sum()
 
-            # Compute loss on the final decoded output for the last batch
+            # Accumulate loss on the final decoded output for this batch
             decoded = decode_ttfs_output(first_spike_time, sim_len)
-            loss = loss_fn(decoded, label)
+            epoch_loss += loss_fn(decoded, label).item()
             functional.reset_net(model)
 
-    return (tot / length), loss.item() / length
+    if length == 0:
+        return tot, 0.0
+    return (tot / length), epoch_loss / length
 
 
 def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
