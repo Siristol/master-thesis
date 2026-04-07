@@ -7,4 +7,14 @@ python main.py test   --gpus=2   --bs=32   --l=8   --model=mobilenet   --data=co
 Test SNN
 python main.py test   --gpus=2   --bs=32   --l=8   --model=mobilenet   --data=coco   --mode=snn   --id=systest_mobilenet-coco --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
 
+python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg19   --data=cifar10   --mode=snn   --id=systest_vgg19-cifar10 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=128   --l=8   --model=vgg19   --data=cifar100   --mode=snn   --id=systest_vgg19-cifar100 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=32   --l=8   --model=vgg19   --data=coco   --mode=snn   --id=systest_vgg19-coco --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
 
+python main.py test   --gpus=2   --bs=128   --l=8   --model=resnet20   --data=cifar10   --mode=snn   --id=systest_resnet20-cifar10 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=128   --l=8   --model=resnet20   --data=cifar100   --mode=snn   --id=systest_resnet20-cifar100 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=32   --l=8   --model=resnet20   --data=coco   --mode=snn   --id=systest_resnet20-coco --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+
+python main.py test   --gpus=2   --bs=128   --l=8   --model=mobilenet   --data=cifar10   --mode=snn   --id=systest_mobilenet-cifar10 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=128   --l=8   --model=mobilenet   --data=cifar100   --mode=snn   --id=systest_mobilenet-cifar100 --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
+python main.py test   --gpus=2   --bs=32   --l=8   --model=mobilenet   --data=coco   --mode=snn   --id=systest_mobilenet-coco --sn_type=gn   --tau=4   --t=32   --device=cuda   --seed=42
