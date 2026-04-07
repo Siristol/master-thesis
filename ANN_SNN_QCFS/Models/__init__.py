@@ -17,7 +17,7 @@ def modelpool(MODELNAME, DATANAME):
     elif 'coco' in DATANAME.lower():
         num_classes = 2
         num_filters = 8
-        strideFistConv = 2
+        strideFistConv = 1
     if MODELNAME.lower() == 'vgg16':
         return vgg16(num_classes=num_classes)
     elif MODELNAME.lower() == 'vgg19':
