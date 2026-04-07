@@ -49,8 +49,10 @@ if __name__ == "__main__":
         if args.mode == 'snn':
             model = replace_qcfs_with_sn(model,members=args.tau,sn_type=args.sn_type)
             model.to(args.device)
-            acc = eval_snn(test, model,criterion, args.device, args.t)
-            print('Accuracy SNN: ', acc)
+            #acc = eval_snn(test, model,criterion, args.device, args.t)
+            #print('Accuracy SNN: ', acc)
+            acc_curve, loss = eval_snn_ttfs(test, model, criterion, args.device, args.t, args.bs, theta=0)
+            print('Accuracy SNN (TTFS readout): ', acc_curve)
         elif args.mode == 'ann':
             model.to(args.device)
             acc, _ = eval_ann(test, model, criterion, args.device)

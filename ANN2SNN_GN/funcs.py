@@ -188,6 +188,84 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
         counter.remove()
     return (tot/length),loss.item()/length
 
+def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, bs=128, theta=0.5, rank=0):
+    """
+    TTFS readout only:
+        - first_cls[b] set to class index at the earliest timestep where any class output crosses theta
+        - if never crosses: fallback to argmax of accumulated output (rate-like fallback)
+    """
+    print(f"theta for TTFS decision: {theta}")
+    tot = torch.zeros(sim_len).cuda()
+    length = 0
+    model = model.cuda()
+    model.eval()
+    counter = SynOpsCounter(model, theta=theta)
+
+    total_loss = 0.0
+    total_steps = 0
+    with torch.no_grad():
+        for idx, (img, label) in enumerate(tqdm((test_dataloader))):
+            length += len(label)
+            img = img.cuda()
+            label = label.cuda()
+            counter.add_batch(len(label))
+
+            B = label.shape[0]
+            decided = torch.zeros(B, dtype=torch.bool, device=img.device)
+            first_cls = torch.full((B,), -1, dtype=torch.long, device=img.device)
+            first_t = torch.full((B,), -1, dtype=torch.long, device=img.device)
+
+            acc_out = None  # fallback accumulator (same shape as out)
+            steps_run = 0
+            for t in range(sim_len):
+                out = model(img)  # expected [B, num_classes] (or similar)
+                #print(f"Max output at timestep {t}: {out.max().item()}")
+                steps_run += 1
+                if acc_out is None:
+                    acc_out = torch.zeros_like(out)
+                acc_out += out
+
+                # define "spike event" for TTFS:
+                spk = out > theta                      # [B, C] bool
+                new_decision = (~decided) & spk.any(1) # [B] bool
+
+                if new_decision.any():
+                    first_t[new_decision] = t
+                    first_cls[new_decision] = out[new_decision].argmax(dim=1)
+                    decided[new_decision] = True
+
+                cur_pred = torch.where(decided, first_cls, acc_out.argmax(dim=1))
+                correct_now = (label == cur_pred).sum()
+                tot[t] += correct_now
+
+                if decided.all():
+                    # fill remaining timesteps since prediction won't change after early stop
+                    for tt in range(t + 1, sim_len):
+                        tot[tt] += correct_now
+                    break
+
+            # final prediction (ttfs if decided else fallback)
+            final_pred = torch.where(decided, first_cls, acc_out.argmax(dim=1))
+
+            # keep your original loss style (average over time) for comparability
+            avg_out = acc_out / float(sim_len)
+            total_loss += loss_fn(avg_out, label).item()
+
+            functional.reset_net(model)
+            total_steps += steps_run
+        print("decided %:", decided.float().mean().item(),
+            "mean first_t (decided):", first_t[decided].float().mean().item() if decided.any() else None,
+            "t=0 fraction:", (first_t[decided] == 0).float().mean().item() if decided.any() else None)
+        counter.compute_synops()
+        total_synops = counter.compute_synops()
+        print(f"Avg steps per batch: {total_steps/(length/bs)}")
+        print(f"Total spikes (all IF layers, all samples): {counter.total_spikes:.0f}")
+        energy = total_synops * 0.9e-12
+        print("Energy per sample (J):", energy)
+        counter.remove()
+
+    return (tot / length), (total_loss / len(test_dataloader))
+
 def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
     epoch_loss = 0
     tot = torch.tensor(0.).cuda(device)
@@ -207,7 +285,7 @@ def eval_ann(test_dataloader, model, loss_fn, device, rank=0):
 
 
 class SynOpsCounter:
-    def __init__(self, model: nn.Module):
+    def __init__(self, model: nn.Module, theta=0.5):
         self.model = model
         self.handles = []
 
@@ -228,17 +306,17 @@ class SynOpsCounter:
                 if_name = self._module_to_name.get(m, f"IF@{id(m)}")
                 self.layer_spikes[if_name] = 0.0
                 self.layer_fanout[if_name] = None
-                self.handles.append(m.register_forward_hook(self._if_hook(if_name)))
+                self.handles.append(m.register_forward_hook(self._if_hook(if_name, theta=theta)))
 
         # hook weighted layers (consumers)
         for m in model.modules():
             if isinstance(m, (nn.Conv2d, nn.Linear)):
                 self.handles.append(m.register_forward_hook(self._consumer_hook))
 
-    def _if_hook(self, if_name):
+    def _if_hook(self, if_name, theta=0.5):
         def hook(module, inp, out):
             # spike count
-            spikes = (out > 0).float()
+            spikes = (out > 0).float() # count spikes as at least one of the member neurons fired
             spike_count = spikes.sum().item()
             self.layer_spikes[if_name] += spike_count
             self.total_spikes += spike_count
@@ -253,7 +331,7 @@ class SynOpsCounter:
 
             # If the consumer is depthwise: each input-channel neuron connects to kx*ky outputs
             if consumer_module.groups == consumer_module.in_channels and consumer_module.out_channels == consumer_module.in_channels:
-                return kx * ky  # typically 9
+                return kx * ky  
 
             # Normal / pointwise: each input neuron connects to out_channels per spatial location; with kx*ky neighborhoods
             # For pointwise k=1 => out_channels
