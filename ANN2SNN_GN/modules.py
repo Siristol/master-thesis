@@ -106,9 +106,11 @@ class GN(base.MemoryModule):
         #charge
         self.v=self.v+x
         #fire
-        spike=self.surrogate_function(self.v - self.bias)
+        spike=self.surrogate_function(self.v - self.bias) #spike before aggregation: shape is [m,N,C,H,W]
+        #print(f"spikes before aggregation: {spike}")
         #spike aggregation
-        spike=torch.sum(spike,dim=0,keepdim=False)
+        spike=torch.sum(spike,dim=0,keepdim=False) #spike after aggregation: shape is [N,C,H,W]
+        #print(f"spikes after aggregation: {spike}")
         #reset (or lateral inhibition)
         self.v=self.jit_soft_reset(self.v,spike,self.v_threshold) 
         return spike*self.v_threshold
