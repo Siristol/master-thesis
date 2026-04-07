@@ -8,7 +8,6 @@ import os
 from spikingjelly.activation_based import functional
 from torch.utils.tensorboard import SummaryWriter   
 from modules import CombinedNode, GN, GN_TTFS
-from encoding_utils import decode_ttfs_output
 from collections import deque
 
 def seed_all(seed=42):
@@ -190,32 +189,43 @@ def eval_snn(test_dataloader, model,loss_fn, device, sim_len=8, rank=0):
     return (tot/length),loss.item()/length
 
 def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, rank=0):
-    """Evaluate an SNN that uses TTFS (Time-to-First-Spike) temporal coding.
+    """Evaluate an SNN whose hidden layers use TTFS (Time-to-First-Spike) coding.
 
-    For each output neuron the timestep of its *first* spike is recorded.
-    Spike times are decoded back to analog confidence values using:
-        decoded = 1 - spike_time / sim_len
-    so that an early spike corresponds to high confidence.  Neurons that
-    never fire receive a decoded value of 0.
+    When a rate-coded ANN is converted to SNN and the QCFS activations are
+    replaced by GN_TTFS neurons, the same full input is presented at every
+    timestep.  In this regime GN_TTFS neurons fire within the first 1–3
+    timesteps regardless of which class is correct, so *all* output neurons
+    have essentially the same first-spike time.  Decoding with
+    ``1 - t/T`` therefore yields near-identical confidence scores for every
+    class, making first-spike argmax random (~1/num_classes accuracy).
 
-    The cumulative accuracy is measured at every timestep so that the
-    accuracy-vs-latency trade-off can be inspected (same format as
-    eval_snn).
+    The correct approach for a *converted* (rate-coded) network is to
+    classify using the **cumulative spike count**, not the first spike time.
+    GN_TTFS still enforces at most one spike per member neuron, so the
+    total spikes are much sparser than GN (capped at ``m`` per neuron vs
+    up to ``T × rate`` for GN).  The relative ordering of class spike
+    counts is preserved, so accuracy stays close to the rate-coded baseline.
+
+    True latency-based TTFS (where spike *time* encodes class confidence)
+    requires a fundamentally different training procedure (e.g., with
+    slowly ramped inputs so each neuron fires at a time inversely
+    proportional to its activation magnitude).  Applying this to a
+    pre-trained rate-coded network would need network-specific re-calibration
+    and is beyond a simple eval-time switch.
 
     Args:
         test_dataloader: DataLoader for the evaluation dataset.
-        model: SNN model whose ReLU/QCFS layers have been replaced by
-               GN_TTFS neurons.
-        loss_fn: Loss function (applied to the decoded output at the end
-                 of the simulation window).
+        model: SNN model whose QCFS layers have been replaced by GN_TTFS
+               neurons.
+        loss_fn: Loss function applied to the normalised spike-count output.
         device: Device string or index (e.g. 'cuda').
         sim_len: Number of simulation timesteps T.
         rank: Process rank (for distributed evaluation; only rank 0 logs).
 
     Returns:
-        Tuple (acc_per_step, final_loss) where acc_per_step is a tensor of
-        length sim_len containing the fraction of correctly classified
-        samples at each timestep.
+        Tuple ``(acc_per_step, final_loss)`` where ``acc_per_step`` is a
+        tensor of length ``sim_len`` with the fraction of correctly
+        classified samples accumulated up to each timestep.
     """
     tot = torch.zeros(sim_len, device=device)
     length = 0
@@ -229,30 +239,20 @@ def eval_snn_ttfs(test_dataloader, model, loss_fn, device, sim_len=8, rank=0):
             img = img.to(device)
             label = label.to(device)
 
-            # first_spike_time[b, c] = timestep of first spike for sample b,
-            # class c.  Initialised to sim_len (sentinel for "never spiked").
-            first_spike_time = None
+            spikes = 0  # accumulate spike counts across timesteps
 
             for t in range(sim_len):
                 out = model(img)  # [batch, num_classes]
+                spikes += out
 
-                if first_spike_time is None:
-                    first_spike_time = torch.full(
-                        out.shape, sim_len, dtype=torch.float, device=out.device
-                    )
+                # Classify by total spike count (not first-spike time).
+                # GN_TTFS sparsity ensures each neuron fires at most m
+                # times total, giving a much lower spike budget than GN.
+                tot[t] += (label == spikes.max(1)[1]).sum()
 
-                # Record the first timestep at which each output neuron fires
-                spiked_now = out > 0
-                not_yet_spiked = first_spike_time >= sim_len
-                first_spike_time[spiked_now & not_yet_spiked] = float(t)
-
-                # Decode accumulated first-spike times and measure accuracy
-                decoded = decode_ttfs_output(first_spike_time, sim_len)
-                tot[t] += (label == decoded.max(1)[1]).sum()
-
-            # Accumulate loss on the final decoded output for this batch
-            decoded = decode_ttfs_output(first_spike_time, sim_len)
-            epoch_loss += loss_fn(decoded, label).item()
+            # Normalise counts to [0, 1] for the loss computation
+            spikes_norm = spikes / sim_len
+            epoch_loss += loss_fn(spikes_norm, label).item()
             functional.reset_net(model)
 
     if length == 0:
