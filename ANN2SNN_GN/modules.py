@@ -125,3 +125,54 @@ class GN(base.MemoryModule):
 
   
 
+class GN_TTFS(base.MemoryModule):
+    def __init__(self, m: int = 4, v_threshold: float = 1.0,
+                 surrogate_function: Callable = surrogate.Sigmoid(), step_mode: str = 's'):
+        super().__init__()
+        self.m = m
+        self.step_mode = step_mode
+        self.surrogate_function = surrogate_function
+        self.v_threshold = v_threshold / self.m
+        self.register_memory("v", self.v_threshold * 0.5)
+        self.register_memory("has_spiked", 0.0)
+        # Staggered thresholds for the m member neurons (same as GN)
+        self.bias = torch.arange(1, m + 1, 1) * self.v_threshold
+
+    @staticmethod
+    @torch.jit.script
+    def jit_soft_reset(v: torch.Tensor, spike: torch.Tensor, v_threshold: float):
+        v = v - spike * v_threshold
+        return v
+
+    def single_step_forward(self, x):
+        self.v_float_to_tensor(x)
+
+        # Suppress charging for members that have already spiked
+        active = (self.has_spiked == 0).float()
+        self.v = self.v + x * active
+
+        # Fire: apply threshold for each member neuron
+        spike = self.surrogate_function(self.v - self.bias)
+        # Suppress spikes from already-spiked members
+        spike = spike * active
+
+        # Update has_spiked: once a member fires, lock it out permanently
+        self.has_spiked = torch.clamp(self.has_spiked + spike, 0.0, 1.0)
+
+        # Aggregate across member neurons (same as GN)
+        spike_agg = torch.sum(spike, dim=0, keepdim=False)
+
+        # Soft reset for members that just fired
+        self.v = self.jit_soft_reset(self.v, spike, self.v_threshold)
+
+        return spike_agg * self.v_threshold
+
+    def v_float_to_tensor(self, x: torch.Tensor):
+        if isinstance(self.v, float):
+            v_init = self.v
+            self.v = torch.full_like(x.data, v_init)
+            self.len_vshape = len(self.v.shape)
+            self.v = self.v.repeat(self.m, *[1] * self.len_vshape).to(x)
+            self.bias = self.bias.view(-1, *[1] * self.len_vshape).to(x)
+        if isinstance(self.has_spiked, float):
+            self.has_spiked = torch.zeros_like(self.v)
