@@ -302,7 +302,7 @@ class SynOpsCounter:
 
         # hook IFs
         for m in model.modules():
-            if isinstance(m, (CombinedNode, GN)):
+            if isinstance(m, (CombinedNode, GN, GN_TTFS)):
                 if_name = self._module_to_name.get(m, f"IF@{id(m)}")
                 self.layer_spikes[if_name] = 0.0
                 self.layer_fanout[if_name] = None

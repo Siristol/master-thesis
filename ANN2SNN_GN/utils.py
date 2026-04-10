@@ -42,6 +42,8 @@ def replace_qcfs_with_sn(model: nn.Module,members:int,sn_type:str):
             new_child = GN(m=members,v_threshold=child.v_threshold.item())
         elif sn_type=='if':
             new_child = CombinedNode(v_threshold=child.v_threshold.item())
+        elif sn_type=='gn_ttfs':
+            new_child = GN_TTFS(m=members,v_threshold=child.v_threshold.item())
         else:
             raise ValueError('sn_type must be pgn or cpgn or if')
         setattr(parent, name.split('.')[-1], new_child)
